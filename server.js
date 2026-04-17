@@ -3,17 +3,17 @@ const express = require('express');
 const session = require('express-session');
 const flash = require('connect-flash');
 const path = require('path');
-const connectDB = require('./config/db');
-const { optionalAuth } = require('./middleware/authMiddleware');
+const connectDB = require('./backend/config/db');
+const { optionalAuth } = require('./backend/middleware/authMiddleware');
 
 const app = express();
 
-// View Engine
+// View Engine — points to frontend/views
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
+app.set('views', path.join(__dirname, 'frontend/views'));
 
-// Static
-app.use(express.static(path.join(__dirname, 'public')));
+// Static Assets — points to frontend/public
+app.use(express.static(path.join(__dirname, 'frontend/public')));
 
 // Body Parser
 app.use(express.urlencoded({ extended: true }));
@@ -41,15 +41,14 @@ app.use((req, res, next) => {
 
 // Auto Seed Logic
 const autoSeed = async () => {
-  const User = require('./models/User');
+  const User = require('./backend/models/User');
   const userCount = await User.countDocuments();
   if (userCount === 0) {
     console.log('🌱 Database is empty! Auto-seeding initial data...');
     try {
-      const { execSync } = require('child_process');
-      // Require the seed file to run its logic without using exec to ensure it shares memory server if running memory server
-      const seedFunc = require('./seedFunc'); 
-      if(seedFunc) await seedFunc();
+      // Require the seed file to run its logic
+      const seedFunc = require('./backend/seedFunc');
+      if (seedFunc) await seedFunc();
     } catch (e) {
       console.log('⚠️ Could not run auto-seed directly. Try running npm run seed manually.');
     }
@@ -61,10 +60,9 @@ connectDB().then(() => {
 });
 
 // Routes
-
-app.use('/auth', require('./routes/auth'));
-app.use('/planner', require('./routes/planner'));
-app.use('/traveler', require('./routes/traveler'));
+app.use('/auth', require('./backend/routes/auth'));
+app.use('/planner', require('./backend/routes/planner'));
+app.use('/traveler', require('./backend/routes/traveler'));
 
 // Home redirect
 app.get('/', (req, res) => {
